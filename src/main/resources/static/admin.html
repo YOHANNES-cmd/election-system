@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Election Admin Panel</title>
+  <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f4f7;
+            padding: 20px;
+        }
+        h2, h3, h4 {
+            color: #2c3e50;
+        }
+        label {
+            font-weight: bold;
+        }
+        input {
+            padding: 8px;
+            margin-bottom: 10px;
+            width: 250px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        #totalVotes {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .user-container {
+            background-color: #ecf0f1;
+            padding: 10px;
+            margin: 10px 0;
+            border-left: 5px solid #3498db;
+            border-radius: 4px;
+        }
+        .user-container h4 {
+            margin: 0 0 5px 0;
+            color: #34495e;
+        }
+        .votes-per-site li {
+            padding: 4px 8px;
+            margin: 2px 0;
+            background-color: #fff;
+            border-left: 4px solid #2980b9;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>ADMIN PANEL</h1>
+
+<h3>Total Users: <span id="totalUsers">0</span></h3>
+<h3>Total Voters: <span id="totalVoters">0</span></h3>
+
+<h2>Voters Per Site</h2>
+<ul id="siteVotes"></ul>
+<hr>
+<h2>Create User</h2>
+
+<label>Username:</label>
+<input id="newUsername" placeholder="username"><br><br>
+
+<label>Password:</label>
+<input id="newPassword" type="password"><br><br>
+
+<label>Role:</label>
+<select id="role">
+<option value="USER">USER</option>
+<option value="COUNTER">COUNTER</option>
+</select><br><br>
+
+<button onclick="createUser()">Create User</button>
+
+<hr>
+
+<h2>Existing Users</h2>
+<ul id="usersList"></ul>
+
+<script>
+
+const adminUsername="admin";
+const adminPassword="1234";
+
+function authHeader(){
+return "Basic "+btoa(adminUsername+":"+adminPassword);
+}
+
+function loadDashboard(){
+
+fetch("/admin/dashboard",{
+headers:{ "Authorization":authHeader() }
+})
+.then(r=>r.json())
+.then(data=>{
+
+console.log(data); // helps debugging
+
+document.getElementById("totalUsers").innerText=data.totalUsers || 0;
+document.getElementById("totalVoters").innerText=data.totalVoters || 0;
+
+const siteList=document.getElementById("siteVotes");
+siteList.innerHTML="";
+
+if(data.sites){
+for(const site in data.sites){
+
+const li=document.createElement("li");
+li.innerText=site+" : "+data.sites[site];
+
+siteList.appendChild(li);
+
+}
+}
+
+});
+
+}
+
+function createUser(){
+
+const username=document.getElementById("newUsername").value;
+const password=document.getElementById("newPassword").value;
+const role=document.getElementById("role").value;
+
+fetch("/admin/create-user",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json",
+"Authorization":authHeader()
+},
+
+body:JSON.stringify({username,password,role})
+
+})
+.then(r=>r.json())
+.then(data=>{
+
+alert(data.message);
+
+loadUsers();
+loadDashboard();
+
+});
+
+}
+
+function loadUsers(){
+
+fetch("/admin/users",{
+headers:{ "Authorization":authHeader() }
+})
+.then(r=>r.json())
+.then(users=>{
+
+const list=document.getElementById("usersList");
+
+list.innerHTML="";
+
+users.forEach(u=>{
+
+const li=document.createElement("li");
+li.innerText=u.username+" ("+u.role+")";
+
+list.appendChild(li);
+
+});
+
+});
+
+}
+
+loadUsers();
+loadDashboard();
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Vote Panel</title>
+     <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f4f7;
+            padding: 20px;
+        }
+        h2, h3, h4 {
+            color: #2c3e50;
+        }
+        label {
+            font-weight: bold;
+        }
+        input {
+            padding: 8px;
+            margin-bottom: 10px;
+            width: 250px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        #totalVotes {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        #votesPerSite li {
+            background-color: #ecf0f1;
+            margin: 4px 0;
+            padding: 6px 10px;
+            border-left: 5px solid #3498db;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Submit Vote</h2>
+
+<label>Username:</label>
+<input id="username" placeholder="username"><br><br>
+
+<label>Password:</label>
+<input id="password" type="password" placeholder="password"><br><br>
+
+<label>Site:</label>
+<input id="site" placeholder="Site 1"><br><br>
+
+<button onclick="submitVote()">Submit Vote</button>
+
+<h3>Total Voters Submitted: <span id="totalVotes">0</span></h3>
+<h4>Voters Per Site:</h4>
+<ul id="votesPerSite"></ul>
+
+<script>
+function submitVote() {
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value.trim();
+    const site = document.getElementById("site").value.trim();
+
+    if (!username || !password || !site) {
+        alert("Fill all fields!");
+        return;
+    }
+
+    fetch(`/user/submit-vote?password=${encodeURIComponent(password)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, site, count: 1 })
+    })
+    .then(r => r.json())
+    .then(data => {
+        alert(data.message);
+        updateVoteDisplay(data);
+    })
+    .catch(err => console.error("Error submitting vote:", err));
+}
+
+// Update totals
+function updateVoteDisplay(data) {
+    document.getElementById("totalVotes").innerText = data.totalSubmitted || 0;
+
+    const ul = document.getElementById("votesPerSite");
+    ul.innerHTML = "";
+    const votesPerSite = data.votesPerSite || {};
+    for (const site in votesPerSite) {
+        const li = document.createElement("li");
+        li.textContent = `${site}: ${votesPerSite[site]}`;
+        ul.appendChild(li);
+    }
+}
+
+// Load votes when username is filled
+function loadUserVotes(username) {
+    fetch(`/user/my-votes/${encodeURIComponent(username)}`)
+    .then(r => r.json())
+    .then(updateVoteDisplay)
+    .catch(err => console.error("Error loading votes:", err));
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const username = document.getElementById("username").value.trim();
+    if (username) loadUserVotes(username);
+});
+</script>
+
+</body>
+</html>
